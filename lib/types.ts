@@ -78,6 +78,8 @@ export interface SimulationContextType {
   simulationMode: SimulationMode
   isDDoSActive: boolean
   showQuiz: boolean
+  customUrl: string | null
+  customMessage: string | null
   startSimulation: () => void
   pauseSimulation: () => void
   resetSimulation: () => void
@@ -89,4 +91,5 @@ export interface SimulationContextType {
   setSimulationMode: (mode: SimulationMode) => void
   toggleDDoSAttack: () => void
   setShowQuiz: (show: boolean) => void
+  setCustomUrl: (url: string, message: string) => void
 }

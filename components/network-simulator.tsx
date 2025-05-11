@@ -7,6 +7,7 @@ import Timeline from "./timeline"
 import DetailView from "./detail-view"
 import ExplanationPanel from "./explanation-panel"
 import QuizPanel from "./quiz-panel"
+import UrlInput from "./url-input"
 import { SimulationProvider } from "@/lib/simulation-context"
 
 export default function NetworkSimulator() {
@@ -23,6 +24,7 @@ function NetworkSimulatorContent() {
   return (
     <div className="flex flex-col gap-6">
       <SimulationControls />
+      <UrlInput />
       <QuizPanel />
       <ExplanationPanel />
       <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-4 border border-slate-700 shadow-lg min-h-[500px]">

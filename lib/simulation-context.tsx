@@ -45,84 +45,90 @@ const attackerConnections: Connection[] = [
 ]
 
 // Sample message to send
-const MESSAGE = "Hello World"
+const DEFAULT_MESSAGE = "Hello World"
 
-// Define all possible events for HTTP mode
-const httpEvents: SimulationEvent[] = [
-  { time: 0, type: "info", message: "Simulation ready. Press Start to begin." },
-  { time: 0, type: "info", message: "Starting DNS resolution for server.example.com", nodeId: "computer" },
-  { time: 500, type: "info", message: "DNS query sent to resolver", nodeId: "dns" },
-  { time: 1000, type: "success", message: "DNS resolved: server.example.com -> 203.0.113.42", nodeId: "computer" },
-  { time: 1500, type: "info", message: "Initiating TCP handshake (SYN)", nodeId: "computer" },
-  { time: 1800, type: "info", message: "Server responds with SYN-ACK", nodeId: "server" },
-  { time: 2100, type: "info", message: "Client acknowledges with ACK", nodeId: "computer" },
-  { time: 2400, type: "success", message: "TCP connection established", nodeId: "computer" },
-  {
-    time: 3000,
-    type: "info",
-    message: `Fragmenting message "${MESSAGE}" into ${MESSAGE.length} packets`,
-    nodeId: "computer",
-  },
-  { time: 4500, type: "error", message: "Packet #4 lost in transmission", nodeId: "router1" },
-  { time: 6000, type: "info", message: "TCP detected packet loss, retransmitting packet #4", nodeId: "computer" },
-  { time: 6500, type: "error", message: "Packet #8 lost in transmission", nodeId: "router2" },
-  { time: 8000, type: "info", message: "TCP detected packet loss, retransmitting packet #8", nodeId: "computer" },
-  { time: 9000, type: "info", message: "Server receiving packets", nodeId: "server" },
-  { time: 10000, type: "success", message: `Message "${MESSAGE}" successfully reassembled in order`, nodeId: "server" },
-  { time: 10000, type: "warning", message: `Message partially reassembled due to packet loss (UDP)`, nodeId: "server" },
-  { time: 24900, type: "success", message: "Simulation complete", nodeId: "computer" },
-]
+// Create dynamic events based on URL and message
+const createHttpEvents = (url: string, message: string): SimulationEvent[] => {
+  return [
+    { time: 0, type: "info", message: "Simulation ready. Press Start to begin." },
+    { time: 0, type: "info", message: `Starting DNS resolution for ${url}`, nodeId: "computer" },
+    { time: 500, type: "info", message: "DNS query sent to resolver", nodeId: "dns" },
+    { time: 1000, type: "success", message: `DNS resolved: ${url} -> 203.0.113.42`, nodeId: "computer" },
+    { time: 1500, type: "info", message: "Initiating TCP handshake (SYN)", nodeId: "computer" },
+    { time: 1800, type: "info", message: "Server responds with SYN-ACK", nodeId: "server" },
+    { time: 2100, type: "info", message: "Client acknowledges with ACK", nodeId: "computer" },
+    { time: 2400, type: "success", message: "TCP connection established", nodeId: "computer" },
+    {
+      time: 3000,
+      type: "info",
+      message: `Fragmenting message "${message}" into ${message.length} packets`,
+      nodeId: "computer",
+    },
+    { time: 4500, type: "error", message: "Packet #4 lost in transmission", nodeId: "router1" },
+    { time: 6000, type: "info", message: "TCP detected packet loss, retransmitting packet #4", nodeId: "computer" },
+    { time: 6500, type: "error", message: "Packet #8 lost in transmission", nodeId: "router2" },
+    { time: 8000, type: "info", message: "TCP detected packet loss, retransmitting packet #8", nodeId: "computer" },
+    { time: 9000, type: "info", message: "Server receiving packets", nodeId: "server" },
+    { time: 10000, type: "success", message: `Message "${message}" successfully reassembled in order`, nodeId: "server" },
+    { time: 10000, type: "warning", message: `Message partially reassembled due to packet loss (UDP)`, nodeId: "server" },
+    { time: 24900, type: "success", message: "Simulation complete", nodeId: "computer" },
+  ]
+}
 
-// WebSocket specific events
-const websocketEvents: SimulationEvent[] = [
-  { time: 0, type: "info", message: "Simulation ready. Press Start to begin." },
-  { time: 0, type: "info", message: "Starting DNS resolution for ws.example.com", nodeId: "computer" },
-  { time: 500, type: "info", message: "DNS query sent to resolver", nodeId: "dns" },
-  { time: 1000, type: "success", message: "DNS resolved: ws.example.com -> 203.0.113.42", nodeId: "computer" },
-  { time: 1500, type: "info", message: "Initiating TCP handshake (SYN)", nodeId: "computer" },
-  { time: 1800, type: "info", message: "Server responds with SYN-ACK", nodeId: "server" },
-  { time: 2100, type: "info", message: "Client acknowledges with ACK", nodeId: "computer" },
-  { time: 2400, type: "success", message: "TCP connection established", nodeId: "computer" },
-  { time: 2600, type: "info", message: "Sending WebSocket upgrade request", nodeId: "computer" },
-  { time: 3000, type: "success", message: "WebSocket connection established", nodeId: "server" },
-  { time: 3500, type: "info", message: "Client sending message to server", nodeId: "computer" },
-  { time: 4500, type: "info", message: "Server receiving client message", nodeId: "server" },
-  { time: 5000, type: "info", message: "Server sending message to client", nodeId: "server" },
-  { time: 6000, type: "info", message: "Client receiving server message", nodeId: "computer" },
-  { time: 7000, type: "info", message: "Full-duplex communication in progress", nodeId: "computer" },
-  { time: 8000, type: "info", message: "Server pushing updates without client request", nodeId: "server" },
-  { time: 9000, type: "info", message: "Client receiving pushed updates", nodeId: "computer" },
-  { time: 10000, type: "info", message: "Client sending message to server", nodeId: "computer" },
-  { time: 11000, type: "info", message: "Server receiving client message", nodeId: "server" },
-  { time: 12000, type: "info", message: "WebSocket connection maintained", nodeId: "computer" },
-  { time: 24900, type: "success", message: "Simulation complete", nodeId: "computer" },
-]
+// WebSocket specific events with custom URL
+const createWebsocketEvents = (url: string): SimulationEvent[] => {
+  return [
+    { time: 0, type: "info", message: "Simulation ready. Press Start to begin." },
+    { time: 0, type: "info", message: `Starting DNS resolution for ws://${url}`, nodeId: "computer" },
+    { time: 500, type: "info", message: "DNS query sent to resolver", nodeId: "dns" },
+    { time: 1000, type: "success", message: `DNS resolved: ws://${url} -> 203.0.113.42`, nodeId: "computer" },
+    { time: 1500, type: "info", message: "Initiating TCP handshake (SYN)", nodeId: "computer" },
+    { time: 1800, type: "info", message: "Server responds with SYN-ACK", nodeId: "server" },
+    { time: 2100, type: "info", message: "Client acknowledges with ACK", nodeId: "computer" },
+    { time: 2400, type: "success", message: "TCP connection established", nodeId: "computer" },
+    { time: 2600, type: "info", message: "Sending WebSocket upgrade request", nodeId: "computer" },
+    { time: 3000, type: "success", message: "WebSocket connection established", nodeId: "server" },
+    { time: 3500, type: "info", message: "Client sending message to server", nodeId: "computer" },
+    { time: 4500, type: "info", message: "Server receiving client message", nodeId: "server" },
+    { time: 5000, type: "info", message: "Server sending message to client", nodeId: "server" },
+    { time: 6000, type: "info", message: "Client receiving server message", nodeId: "computer" },
+    { time: 7000, type: "info", message: "Full-duplex communication in progress", nodeId: "computer" },
+    { time: 8000, type: "info", message: "Server pushing updates without client request", nodeId: "server" },
+    { time: 9000, type: "info", message: "Client receiving pushed updates", nodeId: "computer" },
+    { time: 10000, type: "info", message: "Client sending message to server", nodeId: "computer" },
+    { time: 11000, type: "info", message: "Server receiving client message", nodeId: "server" },
+    { time: 12000, type: "info", message: "WebSocket connection maintained", nodeId: "computer" },
+    { time: 24900, type: "success", message: "Simulation complete", nodeId: "computer" },
+  ]
+}
 
-// HTTPS/TLS specific events
-const httpsEvents: SimulationEvent[] = [
-  { time: 0, type: "info", message: "Simulation ready. Press Start to begin." },
-  { time: 0, type: "info", message: "Starting DNS resolution for secure.example.com", nodeId: "computer" },
-  { time: 500, type: "info", message: "DNS query sent to resolver", nodeId: "dns" },
-  { time: 1000, type: "success", message: "DNS resolved: secure.example.com -> 203.0.113.42", nodeId: "computer" },
-  { time: 1500, type: "info", message: "Initiating TCP handshake (SYN)", nodeId: "computer" },
-  { time: 1800, type: "info", message: "Server responds with SYN-ACK", nodeId: "server" },
-  { time: 2100, type: "info", message: "Client acknowledges with ACK", nodeId: "computer" },
-  { time: 2400, type: "success", message: "TCP connection established", nodeId: "computer" },
-  { time: 2600, type: "info", message: "Initiating TLS handshake", nodeId: "computer" },
-  { time: 3000, type: "info", message: "Client Hello with supported cipher suites", nodeId: "computer" },
-  { time: 3500, type: "info", message: "Server Hello with selected cipher suite", nodeId: "server" },
-  { time: 4000, type: "info", message: "Server sends certificate", nodeId: "server" },
-  { time: 4500, type: "info", message: "Client verifies certificate", nodeId: "computer" },
-  { time: 5000, type: "info", message: "Client sends key exchange", nodeId: "computer" },
-  { time: 5500, type: "info", message: "Server and client generate session keys", nodeId: "server" },
-  { time: 6000, type: "success", message: "Secure TLS connection established", nodeId: "computer" },
-  { time: 6500, type: "info", message: "Sending encrypted HTTP request", nodeId: "computer" },
-  { time: 7500, type: "info", message: "Server decrypts and processes request", nodeId: "server" },
-  { time: 8500, type: "info", message: "Server sends encrypted response", nodeId: "server" },
-  { time: 9500, type: "info", message: "Client decrypts response", nodeId: "computer" },
-  { time: 10000, type: "success", message: "Secure data exchange complete", nodeId: "computer" },
-  { time: 24900, type: "success", message: "Simulation complete", nodeId: "computer" },
-]
+// HTTPS/TLS specific events with custom URL
+const createHttpsEvents = (url: string): SimulationEvent[] => {
+  return [
+    { time: 0, type: "info", message: "Simulation ready. Press Start to begin." },
+    { time: 0, type: "info", message: `Starting DNS resolution for https://${url}`, nodeId: "computer" },
+    { time: 500, type: "info", message: "DNS query sent to resolver", nodeId: "dns" },
+    { time: 1000, type: "success", message: `DNS resolved: https://${url} -> 203.0.113.42`, nodeId: "computer" },
+    { time: 1500, type: "info", message: "Initiating TCP handshake (SYN)", nodeId: "computer" },
+    { time: 1800, type: "info", message: "Server responds with SYN-ACK", nodeId: "server" },
+    { time: 2100, type: "info", message: "Client acknowledges with ACK", nodeId: "computer" },
+    { time: 2400, type: "success", message: "TCP connection established", nodeId: "computer" },
+    { time: 2600, type: "info", message: "Initiating TLS handshake", nodeId: "computer" },
+    { time: 3000, type: "info", message: "Client Hello with supported cipher suites", nodeId: "computer" },
+    { time: 3500, type: "info", message: "Server Hello with selected cipher suite", nodeId: "server" },
+    { time: 4000, type: "info", message: "Server sends certificate", nodeId: "server" },
+    { time: 4500, type: "info", message: `Client verifies certificate for ${url}`, nodeId: "computer" },
+    { time: 5000, type: "info", message: "Client sends key exchange", nodeId: "computer" },
+    { time: 5500, type: "info", message: "Server and client generate session keys", nodeId: "server" },
+    { time: 6000, type: "success", message: "Secure TLS connection established", nodeId: "computer" },
+    { time: 6500, type: "info", message: "Sending encrypted HTTP request", nodeId: "computer" },
+    { time: 7500, type: "info", message: "Server decrypts and processes request", nodeId: "server" },
+    { time: 8500, type: "info", message: "Server sends encrypted response", nodeId: "server" },
+    { time: 9500, type: "info", message: "Client decrypts response", nodeId: "computer" },
+    { time: 10000, type: "success", message: "Secure data exchange complete", nodeId: "computer" },
+    { time: 24900, type: "success", message: "Simulation complete", nodeId: "computer" },
+  ]
+}
 
 // DDoS attack events
 const ddosEvents: SimulationEvent[] = [
@@ -151,6 +157,11 @@ const ddosEvents: SimulationEvent[] = [
   { time: 24900, type: "success", message: "Simulation complete", nodeId: "computer" },
 ]
 
+// Initialize with default events
+const httpEvents = createHttpEvents("example.com", DEFAULT_MESSAGE)
+const websocketEvents = createWebsocketEvents("example.com")
+const httpsEvents = createHttpsEvents("example.com")
+
 // Default context value
 const defaultContextValue: SimulationContextType = {
   nodes: initialNodes,
@@ -178,6 +189,9 @@ const defaultContextValue: SimulationContextType = {
   startDDoSAttack: () => {},
   showQuiz: false,
   setShowQuiz: () => {},
+  customUrl: null,
+  customMessage: null,
+  setCustomUrl: () => {},
 }
 
 // Create context
@@ -200,6 +214,8 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   const [simulationMode, setSimulationMode] = useState<SimulationMode>("http")
   const [isDDoSActive, setIsDDoSActive] = useState(false)
   const [showQuiz, setShowQuiz] = useState(false)
+  const [customUrl, setCustomUrlState] = useState<string | null>(null)
+  const [customMessage, setCustomMessageState] = useState<string | null>(null)
 
   // Animation frame reference
   const animationFrameRef = useRef<number | null>(null)
@@ -217,6 +233,33 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     resetSimulation()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [simulationMode])
+
+  // Set custom URL and message
+  const setCustomUrl = (url: string, message: string) => {
+    setCustomUrlState(url)
+    setCustomMessageState(message)
+    
+    // Update events based on the new URL and message
+    updateEventsForCustomUrl(url, message)
+  }
+  
+  // Update events for custom URL
+  const updateEventsForCustomUrl = (url: string, message: string) => {
+    let newEvents: SimulationEvent[] = []
+    
+    switch (simulationMode) {
+      case "websocket":
+        newEvents = createWebsocketEvents(url)
+        break
+      case "https":
+        newEvents = createHttpsEvents(url)
+        break
+      default:
+        newEvents = createHttpEvents(url, message)
+    }
+    
+    setEvents([newEvents[0]])
+  }
 
   // Reset simulation
   const resetSimulation = () => {
@@ -250,15 +293,32 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
 
     // Set initial events based on mode
     let initialEvents: SimulationEvent[] = []
-    switch (simulationMode) {
-      case "websocket":
-        initialEvents = [websocketEvents[0]]
-        break
-      case "https":
-        initialEvents = [httpsEvents[0]]
-        break
-      default:
-        initialEvents = [httpEvents[0]]
+    
+    // Use custom URL if available
+    if (customUrl) {
+      const message = customMessage || DEFAULT_MESSAGE
+      
+      switch (simulationMode) {
+        case "websocket":
+          initialEvents = [createWebsocketEvents(customUrl)[0]]
+          break
+        case "https":
+          initialEvents = [createHttpsEvents(customUrl)[0]]
+          break
+        default:
+          initialEvents = [createHttpEvents(customUrl, message)[0]]
+      }
+    } else {
+      switch (simulationMode) {
+        case "websocket":
+          initialEvents = [websocketEvents[0]]
+          break
+        case "https":
+          initialEvents = [httpsEvents[0]]
+          break
+        default:
+          initialEvents = [httpEvents[0]]
+      }
     }
 
     if (isDDoSActive) {
@@ -322,18 +382,35 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
       setNodes(initialNodes.map((node) => ({ ...node, status: "idle" })))
       setConnections([...initialConnections])
 
-      // Set events based on current simulation mode
+      // Set events based on current simulation mode and custom URL
       let initialEvents: SimulationEvent[] = []
-      switch (simulationMode) {
-        case "websocket":
-          initialEvents = [websocketEvents[0]]
-          break
-        case "https":
-          initialEvents = [httpsEvents[0]]
-          break
-        default:
-          initialEvents = [httpEvents[0]]
+      
+      if (customUrl) {
+        const message = customMessage || DEFAULT_MESSAGE
+        
+        switch (simulationMode) {
+          case "websocket":
+            initialEvents = [createWebsocketEvents(customUrl)[0]]
+            break
+          case "https":
+            initialEvents = [createHttpsEvents(customUrl)[0]]
+            break
+          default:
+            initialEvents = [createHttpEvents(customUrl, message)[0]]
+        }
+      } else {
+        switch (simulationMode) {
+          case "websocket":
+            initialEvents = [websocketEvents[0]]
+            break
+          case "https":
+            initialEvents = [httpsEvents[0]]
+            break
+          default:
+            initialEvents = [httpEvents[0]]
+        }
       }
+      
       setEvents(initialEvents)
     } else {
       // Activate DDoS mode (existing code)
@@ -466,15 +543,31 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     if (isDDoSActive) {
       allPossibleEvents = ddosEvents
     } else {
-      switch (simulationMode) {
-        case "websocket":
-          allPossibleEvents = websocketEvents
-          break
-        case "https":
-          allPossibleEvents = httpsEvents
-          break
-        default:
-          allPossibleEvents = httpEvents
+      // Use custom URL if available
+      if (customUrl) {
+        const message = customMessage || DEFAULT_MESSAGE
+        
+        switch (simulationMode) {
+          case "websocket":
+            allPossibleEvents = createWebsocketEvents(customUrl)
+            break
+          case "https":
+            allPossibleEvents = createHttpsEvents(customUrl)
+            break
+          default:
+            allPossibleEvents = createHttpEvents(customUrl, message)
+        }
+      } else {
+        switch (simulationMode) {
+          case "websocket":
+            allPossibleEvents = websocketEvents
+            break
+          case "https":
+            allPossibleEvents = httpsEvents
+            break
+          default:
+            allPossibleEvents = httpEvents
+        }
       }
     }
 
@@ -563,11 +656,13 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
       return
     }
 
+    const url = customUrl || "example.com"
+
     switch (simulationMode) {
       case "websocket":
         // WebSocket explanations
         if (time < 2500) {
-          setCurrentExplanation("Step 1: Establishing a standard TCP connection before upgrading to WebSocket.")
+          setCurrentExplanation(`Step 1: Establishing a standard TCP connection to ${url} before upgrading to WebSocket.`)
         } else if (time < 3500) {
           setCurrentExplanation("Step 2: Client sends an upgrade request to switch from HTTP to WebSocket protocol.")
         } else if (time < 7000) {
@@ -584,9 +679,9 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
       case "https":
         // HTTPS/TLS explanations
         if (time < 2500) {
-          setCurrentExplanation("Step 1: Establishing a standard TCP connection before starting TLS handshake.")
+          setCurrentExplanation(`Step 1: Establishing a standard TCP connection to ${url} before starting TLS handshake.`)
         } else if (time < 4500) {
-          setCurrentExplanation("Step 2: Client and server negotiate encryption parameters and exchange certificates.")
+          setCurrentExplanation(`Step 2: Client and server negotiate encryption parameters and exchange certificates for ${url}.`)
         } else if (time < 6500) {
           setCurrentExplanation(
             "Step 3: Both parties generate and exchange keys to establish a secure encrypted channel.",
@@ -602,17 +697,18 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         // Standard HTTP explanations
         if (time < 1000) {
           setCurrentExplanation(
-            "Step 1: Your computer is sending a DNS query to resolve the domain name to an IP address.",
+            `Step 1: Your computer is sending a DNS query to resolve the domain name ${url} to an IP address.`,
           )
         } else if (time < 2000) {
-          setCurrentExplanation("Step 2: DNS server has responded with the IP address of the destination server.")
+          setCurrentExplanation(`Step 2: DNS server has responded with the IP address of ${url}.`)
         } else if (time < 3000 && protocol === "tcp") {
           setCurrentExplanation(
-            "Step 3: Establishing a TCP connection through a three-way handshake (SYN, SYN-ACK, ACK).",
+            `Step 3: Establishing a TCP connection to ${url} through a three-way handshake (SYN, SYN-ACK, ACK).`,
           )
         } else if (time < 4000) {
+          const message = customMessage || DEFAULT_MESSAGE
           setCurrentExplanation(
-            "Step 4: Your message 'Hello World' is being fragmented into individual packets for transmission.",
+            `Step 4: Your message "${message}" is being fragmented into individual packets for transmission.`,
           )
         } else if (time < 8000) {
           setCurrentExplanation(
@@ -627,7 +723,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         } else if (time < 12000) {
           setCurrentExplanation("Step 7: The server is reassembling the packets to reconstruct the original message.")
         } else {
-          setCurrentExplanation("Step 8: Transmission complete! The message has been successfully delivered.")
+          setCurrentExplanation(`Step 8: Transmission complete! The message has been successfully delivered to ${url}.`)
         }
     }
   }
@@ -1312,8 +1408,9 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
 
     // Data packets (if after 3000ms)
     if (time >= 3000) {
-      // Split message into packets
-      const messageChars = MESSAGE.split("")
+      // Get the message to split into packets
+      const messageToSend = customMessage || DEFAULT_MESSAGE
+      const messageChars = messageToSend.split("")
       const packetCount = messageChars.length
 
       for (let i = 0; i < packetCount; i++) {
@@ -1393,6 +1490,9 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     const node = nodes.find((n) => n.id === nodeId)
     if (!node) return { type: "computer" as const, description: "Node not found" }
 
+    const url = customUrl || "example.com"
+    const message = customMessage || DEFAULT_MESSAGE
+
     switch (node.type) {
       case "computer":
         return {
@@ -1404,6 +1504,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
             "Packets Sent": Math.floor(currentTime / 500),
             "RTT (avg)": `${Math.floor(800 / simulationSpeed)}ms`,
             Protocol: protocol.toUpperCase(),
+            "Destination": url,
           },
         }
 
@@ -1413,7 +1514,9 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
           description:
             "The DNS server resolves domain names to IP addresses. It translates human-readable names to machine-readable addresses.",
           stats: {
-            Queries: Math.floor(currentTime / 2000),
+            "Domain Lookup": url,
+            "IP Resolved": "203.0.113.42",
+            "Queries": Math.floor(currentTime / 2000),
             "Cache Hits": Math.floor(currentTime / 4000),
             "Response Time": `${Math.floor(100 / simulationSpeed)}ms`,
           },
@@ -1425,9 +1528,10 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
           description:
             "Your Internet Service Provider connects your home network to the broader internet infrastructure.",
           stats: {
-            Bandwidth: "100 Mbps",
+            "Bandwidth": "100 Mbps",
             "Packets Routed": Math.floor(currentTime / 300),
-            Latency: `${Math.floor(50 / simulationSpeed)}ms`,
+            "Latency": `${Math.floor(50 / simulationSpeed)}ms`,
+            "Connected To": url,
           },
         }
 
@@ -1445,6 +1549,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
             "Packets Routed": Math.floor(currentTime / 200),
             "Dropped Packets": Math.floor((currentTime / 2000) * (packetLossRate / 100)),
             "Queue Length": Math.floor((currentTime % 1000) / 200),
+            "Destination IP": "203.0.113.42",
           },
         }
 
@@ -1452,7 +1557,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         return {
           type: "server" as const,
           description: "The destination server receives the packets and reassembles them into the original message.",
-          receivedPackets: MESSAGE.split("").map((char, i) => {
+          receivedPackets: message.split("").map((char, i) => {
             const isLost = (i === 3 || i === 7) && packetLossRate >= 10 && protocol === "udp"
             return {
               sequenceNumber: i + 1,
@@ -1461,8 +1566,9 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
             }
           }),
           stats: {
+            "Domain": url,
             "IP Address": "203.0.113.42",
-            "Packets Received": Math.min(MESSAGE.length, Math.floor((currentTime - 3000) / 500)),
+            "Packets Received": Math.min(message.length, Math.floor((currentTime - 3000) / 500)),
             "Complete Message": protocol === "tcp" || packetLossRate === 0 ? "Yes" : "No",
           },
         }
@@ -1473,6 +1579,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
           description: "A malicious node sending excessive traffic to overwhelm the target server.",
           stats: {
             "Attack Type": "SYN Flood",
+            "Target": url,
             "Packets Sent": Math.floor(currentTime / 100),
             "Traffic Generated": `${Math.floor(currentTime / 10)} Mbps`,
           },
@@ -1510,9 +1617,12 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     simulationMode,
     setSimulationMode,
     isDDoSActive,
-    toggleDDoSAttack, // Replace startDDoSAttack with toggleDDoSAttack
+    toggleDDoSAttack,
     showQuiz,
     setShowQuiz,
+    customUrl,
+    customMessage,
+    setCustomUrl,
   }
 
   return <SimulationContext.Provider value={contextValue}>{children}</SimulationContext.Provider>

@@ -15,6 +15,13 @@ export default function Packet({ packet }: PacketProps) {
     return "bg-gradient-to-r from-purple-500 to-violet-500"
   }
 
+  // Determine if this is a special packet type
+  const isDnsPacket = packet.data.includes("DNS")
+  const isTcpHandshake = ["SYN", "ACK", "SYN-ACK"].includes(packet.data)
+  const isWebSocketPacket = packet.data.includes("websocket") || packet.direction !== undefined
+  const isTlsPacket =
+    packet.data.includes("Hello") || packet.data.includes("Certificate") || packet.data.includes("Exchange")
+
   return (
     <motion.div
       className={`
@@ -24,6 +31,9 @@ export default function Packet({ packet }: PacketProps) {
         ${packet.retransmission ? "ring-2 ring-red-400" : ""}
         ${packet.direction === "upstream" ? "border-t-4 border-yellow-300" : ""}
         ${packet.direction === "downstream" ? "border-b-4 border-yellow-300" : ""}
+        ${isDnsPacket ? "bg-gradient-to-r from-amber-500 to-yellow-500" : ""}
+        ${isTcpHandshake ? "bg-gradient-to-r from-indigo-500 to-blue-500" : ""}
+        ${isTlsPacket && !packet.encrypted ? "bg-gradient-to-r from-teal-400 to-emerald-400" : ""}
         text-white shadow-lg
       `}
       style={{
@@ -48,7 +58,17 @@ export default function Packet({ packet }: PacketProps) {
           repeatType: "loop",
         }}
       >
-        {packet.encrypted ? <Lock className="h-4 w-4" /> : packet.sequenceNumber}
+        {packet.encrypted ? (
+          <Lock className="h-4 w-4" />
+        ) : isDnsPacket ? (
+          "DNS"
+        ) : isTcpHandshake ? (
+          packet.data
+        ) : isWebSocketPacket ? (
+          "WS"
+        ) : (
+          packet.sequenceNumber
+        )}
       </motion.div>
     </motion.div>
   )
